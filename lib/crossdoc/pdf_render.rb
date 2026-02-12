@@ -355,7 +355,9 @@ module CrossDoc
       @font_families[name] = styles
     end
 
-    def to_pdf(path)
+    # @param pdf_info [Hash] a hash of metadata to be included in the PDF document.
+    #   In particular, "Title" sets the title of the document to be used by chrome when viewing the document.
+    def to_pdf(path, pdf_info: nil)
       download_images
 
       # compute header and footer height
@@ -372,7 +374,7 @@ module CrossDoc
 
       page_margin = [0, 0, 0, 0]
       page_layout = (@doc.page_orientation || 'portrait').to_sym
-      Prawn::Document.generate(path, margin: page_margin, page_layout: page_layout) do |pdf|
+      Prawn::Document.generate(path, margin: page_margin, page_layout: page_layout, info: pdf_info) do |pdf|
 
         # register the fonts
         @font_families.each do |name, styles|
