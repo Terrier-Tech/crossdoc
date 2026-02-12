@@ -33,11 +33,9 @@ module CrossDoc
     def initialize(doc_builder, raw)
       @doc_builder = doc_builder
 
-      @block_orientation = raw[:block_orientation] ? raw[:block_orientation].to_sym : :vertical
-      raw.delete :block_orientation
+      @block_orientation = raw.delete(:block_orientation)&.to_sym || :vertical
 
-      @weight = raw[:weight] || 1.0
-      raw.delete :weight
+      @weight = raw.delete(:weight) || 1.0
 
       init_raw raw
 
@@ -47,6 +45,7 @@ module CrossDoc
       end
 
       @child_builders = []
+      @floating_child_builders = []
 
       @min_height = 0
 
@@ -130,35 +129,50 @@ module CrossDoc
       @child_builders << node_builder
     end
 
+    # A div positioned relative to its parent, but outside of the normal flow of that parent's children.
+    def floating_div(box, raw={})
+      raw[:tag] = 'DIV'
+      raw[:box] = box
+      node_builder = NodeBuilder.new @doc_builder, raw
+      yield node_builder if block_given?
+      @floating_child_builders << node_builder
+    end
+
     def child_width
       self.box.width - self.padding.left - self.padding.right
     end
 
-    def flow_children
+    def layout_children
       if @block_orientation == :horizontal
-        flow_children_horizontal
+        layout_children_horizontal
       else # vertical
-        flow_children_vertical
+        layout_children_vertical
+      end
+
+      @floating_child_builders.each do |child|
+        width = child.box.width > 0 ? child.box.width : (self.box.width - child.box.x)
+        child.flow nil, nil, width
       end
     end
 
-    # flow_children, with extra logic for being a header or footer
+    # layout_children, with extra logic for being a header or footer
     def flow_header_footer
-      flow_children
+      layout_children
       self.box.height = @min_height
     end
 
     # sets the position and size of the node based on the starting position and width (including margin)
     # returns the height consumed
     def flow(x, y, w)
-      self.box.x = x + @margin.left
-      self.box.y = y + @margin.top
+      self.box.x = (x || self.box.x) + @margin.left
+      self.box.y = (y || self.box.y) + @margin.top
       self.box.width = w - @margin.left - @margin.right
 
       # layout the children
-      flow_children
+      layout_children
 
       # compute/update the height
+      push_min_height self.box.height
       if self.text && self.font
         # stupid simple font metrics
         # num_lines = (self.text.length * self.font.size * 0.48 / child_width).ceil
@@ -180,6 +194,7 @@ module CrossDoc
 
     def to_node
       @raw[:children] = @child_builders.map { |b| b.to_node }
+      @raw[:floating_children] = @floating_child_builders.map { |b| b.to_node }
       CrossDoc::Node.new @raw
     end
 
@@ -189,7 +204,7 @@ module CrossDoc
       @child_builders.map { |b| b.weight }.sum
     end
 
-    def flow_children_vertical
+    def layout_children_vertical
       width = child_width
       x = self.padding.left
       y_top = self.padding.top
@@ -203,7 +218,7 @@ module CrossDoc
       end
     end
 
-    def flow_children_horizontal
+    def layout_children_horizontal
       total_weight = total_child_weight
       width = child_width
       x = self.padding.left
@@ -227,6 +242,7 @@ module CrossDoc
       super
       @padding = Margin.new
       @box = doc_builder.page_box
+      self.block_orientation = :vertical
     end
 
     attr_accessor :padding, :box
@@ -236,8 +252,9 @@ module CrossDoc
     end
 
     def to_page
-      flow_children_vertical
+      layout_children
       @raw[:children] = @child_builders.map { |b| b.to_node }
+      @raw[:floating_children] = @floating_child_builders.map { |b| b.to_node }
       CrossDoc::Page.new @raw
     end
 

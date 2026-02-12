@@ -429,6 +429,12 @@ module CrossDoc
             end
             ctx.pop_parent
           end
+
+          # render floating page children outside of content bounding box
+          page.floating_children.each do |child|
+            render_node ctx, child
+          end
+
           ctx.render_horizontal_guides @horizontal_guides
           ctx.render_box_guides @box_guides
         end # page
@@ -493,7 +499,8 @@ module CrossDoc
       end
 
       height = node.box.height
-      pos = [node.box.x, ctx.parent.box.height - node.box.y]
+      parent_height = ctx.parent.is_a?(Page) ? ctx.doc.page_height : ctx.parent.box.height
+      pos = [node.box.x, parent_height - node.box.y]
       if node.tag == 'LI'
         font = node.font
         if font.nil? && node.children.present?
@@ -537,12 +544,15 @@ module CrossDoc
           end
         end
 
-        if node.children
+        if node.children.present? || node.floating_children.present?
           ctx.push_parent node
           node.children.each do |child|
-            if child.box
-              render_node ctx, child
-            end
+            next unless child.box
+            render_node ctx, child
+          end
+          node.floating_children.each do |child|
+            next unless child.box
+            render_node ctx, child
           end
           ctx.pop_parent
         end
