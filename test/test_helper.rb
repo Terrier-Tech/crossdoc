@@ -10,10 +10,6 @@ module TestHelper
   # @param paginate [Numeric, nil] if provided, paginates the doc with the given depth
   # @param show_overlays [Boolean] if true, show element outline overlays in the resulting PDF
   def write_doc(doc, name, paginate: nil, show_overlays: false)
-    File.open("test/output/#{name}.json", 'wt') do |f|
-      f.write JSON.pretty_generate(doc.to_raw)
-    end
-
     if paginate
       CrossDoc::Paginator.new(num_levels: paginate).run doc
     end
@@ -39,6 +35,10 @@ module TestHelper
 
     if show_overlays
       renderer.show_overlays = true
+    end
+
+    File.open("test/output/#{name}.json", 'wt') do |f|
+      f.write JSON.pretty_generate(doc.to_raw)
     end
 
     # renderer.add_horizontal_guide 3.5.inches
