@@ -1,7 +1,7 @@
 require 'crossdoc/converter'
-require_relative 'test_base'
+require_relative 'test_helper'
 
-class TestConvert < TestBase
+class TestConvert < Minitest::Test
 
   def test_convert
 

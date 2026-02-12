@@ -1,7 +1,7 @@
 require 'crossdoc/tree'
-require_relative 'test_base'
+require_relative 'test_helper'
 
-class TestRender < TestBase
+class TestRender < Minitest::Test
   def setup
   end
 
@@ -12,13 +12,13 @@ class TestRender < TestBase
       f.write JSON.pretty_generate(doc.to_raw)
     end
 
-    write_doc doc, name, options
+    write_doc doc, name, **options
   end
 
 
   def test_render_pdf
     render_pdf_named 'doc'
-    render_pdf_named 'report', {paginate: 6}
+    render_pdf_named 'report', paginate: 6
   end
 
 end

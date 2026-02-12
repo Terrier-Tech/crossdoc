@@ -1,14 +1,14 @@
 require 'crossdoc/builder'
-require_relative 'test_base'
+require_relative 'test_helper'
 
-class TestBuilder < TestBase
+class TestBuilder < Minitest::Test
   def setup
   end
 
   def test_builder
     doc = build_demo_doc
 
-    write_doc doc, 'builder', {paginate: 3}
+    write_doc doc, 'builder', paginate: 3
   end
 
   def build_demo_doc
