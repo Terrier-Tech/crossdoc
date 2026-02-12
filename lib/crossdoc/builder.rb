@@ -106,7 +106,7 @@ module CrossDoc
     def node(tag, raw={})
       raw[:tag] = tag.upcase
       node_builder = NodeBuilder.new @doc_builder, raw
-      yield node_builder
+      yield node_builder if block_given?
       @child_builders << node_builder
     end
 
@@ -114,7 +114,7 @@ module CrossDoc
       raw[:tag] = 'DIV'
       raw[:block_orientation] = 'horizontal'
       node_builder = NodeBuilder.new @doc_builder, raw
-      yield node_builder
+      yield node_builder if block_given?
       @child_builders << node_builder
     end
 
@@ -122,7 +122,7 @@ module CrossDoc
       raw[:tag] = 'DIV'
       raw[:block_orientation] = 'vertical'
       node_builder = NodeBuilder.new @doc_builder, raw
-      yield node_builder
+      yield node_builder if block_given?
       @child_builders << node_builder
     end
 
