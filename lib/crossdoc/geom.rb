@@ -121,9 +121,10 @@ module CrossDoc
 
     def initialize(attrs = {})
       assign_fields attrs
+      @valign ||= :top
     end
 
-    simple_fields %i(color size weight decoration family style line_height letter_spacing align transform)
+    simple_fields %i(color size weight decoration family style line_height letter_spacing align valign transform)
 
     def color_no_hash
       self.color.gsub('#', '')[0..5]
@@ -153,7 +154,7 @@ module CrossDoc
     end
 
     def self.default(modifiers={})
-      args = { family: 'helvetica,sans-serif', color: '#000000', size: 12, weight: 'normal', align: :left, line_height: 16 }.merge modifiers
+      args = { family: 'helvetica,sans-serif', color: '#000000', size: 12, weight: 'normal', align: :left, valign: :top, line_height: 16 }.merge modifiers
       # guess as a good line height
       unless args.has_key? :line_height
         args[:line_height] = (1.4 * args[:size]).round.to_i

@@ -191,6 +191,7 @@ module CrossDoc
         color = node.font.color_no_hash
         style = node.font.prawn_style
         align = node.font.align.to_sym
+        valign = node.font.valign.to_sym
         text = node.font.transform_text(text)
         # CSS font families separated by commas
         families = node.font.family.split(',').map(&:strip)
@@ -211,6 +212,7 @@ module CrossDoc
         character_spacing = 0
         color = '000000'
         align = :left
+        valign = :top
         leading = 0.0
       end
       text = process_text_meta text
@@ -238,6 +240,7 @@ module CrossDoc
         width:,
         color:,
         align:,
+        valign:,
         leading:,
         inline_format: true,
         final_gap: false,
