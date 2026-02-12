@@ -1,4 +1,8 @@
 require_relative './util'
+require_relative './tree'
+require_relative './font_metrics'
+require_relative './editor_js_builder'
+require_relative './markdown_builder'
 
 module CrossDoc
 
