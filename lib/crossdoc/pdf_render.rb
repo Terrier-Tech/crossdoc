@@ -218,10 +218,10 @@ module CrossDoc
       text = process_text_meta text
 
       # remove bad whitespace
-      text = text.gsub /\s+/, ' '
+      text = text.gsub(/\s+/, ' ')
 
       # add line breaks for BR tags
-      text = text.gsub /<br>/, "\n"
+      text = text.gsub(/<br>/, "\n")
 
       pos = if node.padding
               [node.padding.left, node.box.height - node.padding.top - leading]
