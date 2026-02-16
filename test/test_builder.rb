@@ -1,14 +1,14 @@
 require 'crossdoc/builder'
-require_relative 'test_base'
+require_relative 'test_helper'
 
-class TestBuilder < TestBase
+class TestBuilder < Minitest::Test
   def setup
   end
 
   def test_builder
     doc = build_demo_doc
 
-    write_doc doc, 'builder', {paginate: 3}
+    write_doc doc, 'builder', paginate: 3
   end
 
   def build_demo_doc
@@ -159,6 +159,106 @@ class TestBuilder < TestBase
     end
 
     builder.to_doc
+  end
+
+  def test_floating_elements
+    builder = CrossDoc::Builder.new page_size: 'us-letter', page_orientation: 'portrait', page_margin: '0.5in'
+
+    builder.header do |header|
+      header.horizontal_div do |header_content|
+        header_content.node 'img', {src: 'https://placehold.co/100x80'} do |logo|
+          logo.push_min_height 100
+          logo.margin.set_all 8
+        end
+        header_content.div do |heading|
+          heading.weight = 3
+          heading.node 'h1' do |h1|
+            h1.default_font size: 24, color: '#000000'
+            h1.padding.set_all 4
+            h1.text = "Header"
+          end
+        end
+      end
+
+      header.floating_div(CrossDoc::Box.new(x: 10, y: 10, width: 400)) do |float|
+        float.border_all '1px dashed #0000FF'
+        float.background_color '#CCCCCC'
+        float.default_font size: 10, color: '#0000FF'
+        float.padding.set_all 4
+        float.text = 'This is a floating div in the header. It is positioned at 10, 10.'
+      end
+    end
+
+    builder.page do |page|
+      page.div do |content|
+        content.node 'p' do |p|
+          p.default_font size: 12, color: '#000000'
+          p.padding.set_all 4
+          p.text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vel tortor vitae nibh bibendum convallis. Phasellus mauris tellus, dapibus hendrerit turpis in, luctus imperdiet felis. Nunc hendrerit quis urna quis pharetra. Sed porttitor, nisi vitae ultrices lacinia, augue nulla efficitur nisi, nec mattis lorem nunc a turpis. Nulla vestibulum cursus tortor, ut porta purus molestie a. Integer convallis justo at mi lacinia, vitae euismod nibh condimentum. Pellentesque ut libero orci. Pellentesque at lacus a nulla auctor venenatis. Sed metus massa, tincidunt at ornare nec, tincidunt sed justo."
+        end
+        content.node 'p' do |p|
+          p.default_font size: 12, color: '#000000'
+          p.padding.set_all 4
+          p.text = "Nam vel consectetur dolor. Vestibulum orci turpis, pellentesque eget lectus ut, aliquam accumsan mi. Duis a arcu nisl. Sed blandit iaculis tellus, eu fringilla magna suscipit at. Interdum et malesuada fames ac ante ipsum primis in faucibus. Ut ac sem vitae lectus bibendum cursus in aliquam urna. Sed sit amet ipsum a ipsum euismod aliquet. Nulla congue blandit magna at gravida. Maecenas mi leo, bibendum et congue eu, consectetur ut metus. Duis semper velit eu accumsan varius. Etiam semper eros a magna convallis, sit amet gravida nisi venenatis. Aenean varius massa id turpis egestas commodo. Mauris et fermentum orci, commodo dapibus ligula."
+        end
+        content.node 'p' do |p|
+          p.default_font size: 12, color: '#000000'
+          p.padding.set_all 4
+          p.text = "Etiam ante dolor, cursus vel nisl eu, rhoncus fermentum purus. Duis eget nisi sed sapien commodo ultrices. Maecenas tincidunt, dui vel rutrum tincidunt, sapien ex mattis tellus, nec ultricies justo turpis id elit. Nulla convallis, erat dictum molestie efficitur, nulla dui cursus ipsum, sed feugiat neque tortor a purus. Mauris vitae sagittis dui, eget convallis orci. Donec sodales cursus augue, venenatis auctor enim suscipit eu. Proin nisl elit, fringilla sed viverra ornare, hendrerit at arcu. Proin eu pretium tellus. Nunc pellentesque eget nulla et sodales. Morbi tincidunt ullamcorper lectus, nec eleifend felis interdum quis. Duis consequat laoreet ante, nec ornare urna dictum vel. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Etiam vel posuere dolor, ut egestas nulla. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. In mattis velit quis orci pretium gravida. Morbi iaculis purus ut lacinia auctor."
+        end
+        content.node 'p' do |p|
+          p.default_font size: 12, color: '#000000'
+          p.padding.set_all 4
+          p.text = "Quisque dignissim a dui a feugiat. Quisque convallis porta interdum. Mauris euismod eu lacus sit amet sodales. Vivamus at lectus vulputate, sollicitudin purus efficitur, tempus orci. Donec eget bibendum libero. Etiam dictum finibus nisi sit amet vestibulum. Curabitur nec enim magna. Vestibulum ornare, arcu ut vestibulum dignissim, nisi neque scelerisque ligula, sit amet mollis tortor dui nec tortor. In hac habitasse platea dictumst. Phasellus lobortis nisl augue. Donec placerat aliquet ornare. Nulla eget odio in nulla tempus bibendum eget non lorem. Nam elit dolor, finibus non dui sit amet, aliquet luctus purus. Pellentesque dapibus enim sem, vitae pretium massa semper vel."
+        end
+        content.node 'p' do |p|
+          p.default_font size: 12, color: '#000000'
+          p.padding.set_all 4
+          p.text = "Nam vel consectetur dolor. Vestibulum orci turpis, pellentesque eget lectus ut, aliquam accumsan mi. Duis a arcu nisl. Sed blandit iaculis tellus, eu fringilla magna suscipit at. Interdum et malesuada fames ac ante ipsum primis in faucibus. Ut ac sem vitae lectus bibendum cursus in aliquam urna. Sed sit amet ipsum a ipsum euismod aliquet. Nulla congue blandit magna at gravida. Maecenas mi leo, bibendum et congue eu, consectetur ut metus. Duis semper velit eu accumsan varius. Etiam semper eros a magna convallis, sit amet gravida nisi venenatis. Aenean varius massa id turpis egestas commodo. Mauris et fermentum orci, commodo dapibus ligula."
+        end
+        content.node 'p' do |p|
+          p.default_font size: 12, color: '#000000'
+          p.padding.set_all 4
+          p.text = "Etiam ante dolor, cursus vel nisl eu, rhoncus fermentum purus. Duis eget nisi sed sapien commodo ultrices. Maecenas tincidunt, dui vel rutrum tincidunt, sapien ex mattis tellus, nec ultricies justo turpis id elit. Nulla convallis, erat dictum molestie efficitur, nulla dui cursus ipsum, sed feugiat neque tortor a purus. Mauris vitae sagittis dui, eget convallis orci. Donec sodales cursus augue, venenatis auctor enim suscipit eu. Proin nisl elit, fringilla sed viverra ornare, hendrerit at arcu. Proin eu pretium tellus. Nunc pellentesque eget nulla et sodales. Morbi tincidunt ullamcorper lectus, nec eleifend felis interdum quis. Duis consequat laoreet ante, nec ornare urna dictum vel. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Etiam vel posuere dolor, ut egestas nulla. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. In mattis velit quis orci pretium gravida. Morbi iaculis purus ut lacinia auctor."
+        end
+        content.node 'p' do |p|
+          p.default_font size: 12, color: '#000000'
+          p.padding.set_all 4
+          p.text = "Quisque dignissim a dui a feugiat. Quisque convallis porta interdum. Mauris euismod eu lacus sit amet sodales. Vivamus at lectus vulputate, sollicitudin purus efficitur, tempus orci. Donec eget bibendum libero. Etiam dictum finibus nisi sit amet vestibulum. Curabitur nec enim magna. Vestibulum ornare, arcu ut vestibulum dignissim, nisi neque scelerisque ligula, sit amet mollis tortor dui nec tortor. In hac habitasse platea dictumst. Phasellus lobortis nisl augue. Donec placerat aliquet ornare. Nulla eget odio in nulla tempus bibendum eget non lorem. Nam elit dolor, finibus non dui sit amet, aliquet luctus purus. Pellentesque dapibus enim sem, vitae pretium massa semper vel."
+        end
+        content.node 'p' do |p|
+          p.default_font size: 12, color: '#000000'
+          p.padding.set_all 4
+          p.text = "Sed id rutrum justo. Donec leo odio, efficitur nec nulla vel, ullamcorper efficitur nibh. Morbi in vulputate libero, sed egestas odio. Donec pharetra blandit nisi, at rutrum ex vestibulum id. Morbi magna sapien, volutpat non facilisis ac, ultricies ac mauris. Aliquam tincidunt rutrum imperdiet. Etiam ultricies, massa at lacinia laoreet, eros ipsum malesuada erat, sed aliquet justo neque id arcu. Sed eget dignissim purus, ut pretium augue. Etiam sed placerat libero, in tristique tellus. Suspendisse eleifend risus orci. Etiam odio odio, facilisis eu metus eu, tempus feugiat eros. Pellentesque vehicula et sem nec placerat. Suspendisse sapien nisl, pellentesque et ex quis, aliquam luctus mi. Suspendisse ut luctus metus, in cursus magna. In a sem a augue imperdiet tempor sed id tellus."
+
+          p.floating_div(CrossDoc::Box.new(x: 250, y: 20)) do |float|
+            float.border_all '1px dashed #0000FF'
+            float.background_color '#CCCCCC'
+            float.default_font size: 10, color: '#0000FF'
+            float.padding.set_all 4
+            float.text = 'This is a floating div in the second to last paragraph of the content. It is positioned at 250, 20.'
+          end
+        end
+        content.node 'p' do |p|
+          p.default_font size: 12, color: '#000000'
+          p.padding.set_all 4
+          p.text = "Aliquam erat volutpat. Sed ac metus id nulla suscipit luctus vel sit amet leo. Curabitur id volutpat libero. Cras cursus faucibus nibh maximus convallis. Curabitur congue molestie massa imperdiet ultricies. Phasellus a facilisis neque. Donec efficitur, odio id mollis consequat, lacus lacus mattis quam, quis sagittis ex lacus a odio. Nam finibus lacinia convallis."
+        end
+      end
+
+      page.floating_div(CrossDoc::Box.new(x: 0, y: 0)) do |float|
+        float.border_all '1px dashed #0000FF'
+        float.background_color '#CCCCCC'
+        float.default_font size: 10, color: '#0000FF'
+        float.padding.set_all 4
+        float.margin.set_all 5
+        float.text = 'This is a floating div on the page. It is positioned at 0, 0, with 5 px margins.'
+      end
+    end
+
+    doc = builder.to_doc
+
+    write_doc(doc, 'floating', paginate: 3)
   end
 
 

@@ -39,6 +39,10 @@ class CrossDoc::Paginator
     new_page = page.shallow_copy
     new_page.children = []
 
+    # keep floating children on their original page number
+    new_page.floating_children = page.floating_children
+    page.floating_children = []
+
     before_parent = new_page
     after_parent = page
     stack.each do |after_node|

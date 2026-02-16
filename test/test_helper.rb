@@ -2,17 +2,16 @@ require 'minitest/autorun'
 require 'crossdoc/paginator'
 require 'crossdoc/pdf_render'
 
-# Base class for test runners, contains common operations like file I/O
-class TestBase < Minitest::Test
+module TestHelper
 
-
-  def write_doc(doc, name, options={})
-    File.open("test/output/#{name}.json", 'wt') do |f|
-      f.write JSON.pretty_generate(doc.to_raw)
-    end
-
-    if options[:paginate]
-      CrossDoc::Paginator.new(num_levels: options[:paginate]).run doc
+  # Renders the given crossdoc doc as a pdf with the given name in test/output
+  # @param doc [CrossDoc::Document]
+  # @param name [String]
+  # @param paginate [Numeric, nil] if provided, paginates the doc with the given depth
+  # @param show_overlays [Boolean] if true, show element outline overlays in the resulting PDF
+  def write_doc(doc, name, paginate: nil, show_overlays: false)
+    if paginate
+      CrossDoc::Paginator.new(num_levels: paginate).run doc
     end
 
     t = Time.now
@@ -34,8 +33,12 @@ class TestBase < Minitest::Test
         leading_factor: 0.4
     }
 
-    if options[:show_overlays]
+    if show_overlays
       renderer.show_overlays = true
+    end
+
+    File.open("test/output/#{name}.json", 'wt') do |f|
+      f.write JSON.pretty_generate(doc.to_raw)
     end
 
     # renderer.add_horizontal_guide 3.5.inches
@@ -45,4 +48,8 @@ class TestBase < Minitest::Test
     puts "Rendered #{name} PDF in #{dt} seconds"
   end
 
+end
+
+class Minitest::Test
+  include TestHelper
 end

@@ -110,6 +110,8 @@ module CrossDoc
 
     def initialize(attrs={})
       assign_fields attrs
+      @children ||= []
+      @floating_children ||= []
     end
 
     simple_fields %i[id tag text src hash list_style list_level start input_type input_value input_possible]
@@ -125,6 +127,7 @@ module CrossDoc
     object_field :padding, Margin
 
     array_field :children, Node
+    array_field :floating_children, Node
 
     def to_s
       downcase_tag = @tag.to_s.downcase
@@ -139,9 +142,10 @@ module CrossDoc
 
       if @text.present?
         "<#{downcase_tag}#{attr_str}>#{@text.to_s}</#{downcase_tag}>"
-      elsif @children.present?
-        child_noun = @children.length > 1 ? "children" : "child"
-        "<#{downcase_tag}#{attr_str}>...</#{downcase_tag}> (#{@children.length} #{child_noun})"
+      elsif @children.present? || @floating_children.present?
+        combined_children = (@children || []) + (@floating_children || [])
+        child_noun = combined_children.length > 1 ? "children" : "child"
+        "<#{downcase_tag}#{attr_str}>...</#{downcase_tag}> (#{combined_children.length} #{child_noun})"
       else
         "<#{downcase_tag}#{attr_str}/>"
       end
@@ -155,9 +159,12 @@ module CrossDoc
 
     def initialize(attrs={})
       assign_fields attrs
+      @children ||= []
+      @floating_children ||= []
     end
 
     array_field :children, Node
+    array_field :floating_children, Node
 
   end
 

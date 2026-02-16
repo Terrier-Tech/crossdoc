@@ -69,6 +69,129 @@ class NodeBuilderTest < Minitest::Test
     end
   end
 
+  def test_layout_vertical
+    builder = new_builder(block_orientation: :vertical)
+    builder.box.width = 100
+
+    builder.div do |div|
+      div.padding.set_all 50
+    end
+    builder.div do |div|
+      div.padding.set_all 50
+    end
+    builder.div do |div|
+      div.padding.set_all 50
+    end
+
+    builder.layout_children
+    root_node = builder.to_node
+
+    expected = [
+      CrossDoc::Box.new(x: 0, y: 0, width: 100, height: 100),
+      CrossDoc::Box.new(x: 0, y: 100, width: 100, height: 100),
+      CrossDoc::Box.new(x: 0, y: 200, width: 100, height: 100),
+    ]
+
+    assert_equal expected, root_node.children.map(&:box)
+  end
+
+  def test_layout_horizontal
+    builder = new_builder(block_orientation: :horizontal)
+    builder.box.width = 600
+
+    builder.div do |div|
+      div.padding.top = 100
+      div.weight = 3
+    end
+    builder.div do |div|
+      div.padding.top = 100
+      div.weight = 2
+    end
+    builder.div do |div|
+      div.padding.top = 100
+      div.weight = 1
+    end
+
+    builder.layout_children
+    root_node = builder.to_node
+
+    expected = [
+      CrossDoc::Box.new(x: 0, y: 0, width: 300, height: 100),
+      CrossDoc::Box.new(x: 300, y: 0, width: 200, height: 100),
+      CrossDoc::Box.new(x: 500, y: 0, width: 100, height: 100),
+    ]
+
+    assert_equal expected, root_node.children.map(&:box)
+  end
+
+  def test_floating_node
+    builder = new_builder(block_orientation: :vertical)
+    builder.box.width = 100
+
+    builder.div do |div|
+      div.padding.set_all 50
+    end
+    builder.div do |div|
+      div.padding.set_all 50
+    end
+    builder.div do |div|
+      div.padding.set_all 50
+    end
+
+    builder.floating_div(CrossDoc::Box.new(x: 50, y: 50, width: 50, height: 50))
+
+    builder.layout_children
+    root_node = builder.to_node
+
+    expected = [
+      CrossDoc::Box.new(x: 50, y: 50, width: 50, height: 50)
+    ]
+
+    assert_equal expected, root_node.floating_children.map(&:box)
+  end
+
+  def test_children_are_within_padding
+    builder = new_builder(block_orientation: :vertical)
+    builder.box.width = 125
+    builder.padding.top = 50
+    builder.padding.left = 25
+
+    builder.div do |div|
+      div.padding.set_all 50
+    end
+
+    builder.layout_children
+    root_node = builder.to_node
+
+    expected = [
+      CrossDoc::Box.new(x: 25, y: 50, width: 100, height: 100),
+    ]
+
+    assert_equal expected, root_node.children.map(&:box)
+  end
+
+  def test_floating_children_not_constrained_by_padding
+    builder = new_builder(block_orientation: :vertical)
+    builder.box.width = 125
+    builder.padding.top = 50
+    builder.padding.left = 25
+
+    builder.div do |div|
+      div.padding.set_all 50
+    end
+
+    builder.floating_div(CrossDoc::Box.new(x: 10, y: 10, width: 100, height: 100))
+
+    builder.layout_children
+    root_node = builder.to_node
+
+    expected = [
+      CrossDoc::Box.new(x: 10, y: 10, width: 100, height: 100)
+    ]
+
+    assert_equal expected, root_node.floating_children.map(&:box)
+  end
+
   private
 
   # Build a single page document, yielding a node builder.
