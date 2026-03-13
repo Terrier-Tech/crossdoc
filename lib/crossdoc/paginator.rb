@@ -35,7 +35,7 @@ class CrossDoc::Paginator
     end
   end
 
-  def break_page(page, stack)
+  def break_page(page, stack, content_height)
     new_page = page.shallow_copy
     new_page.children = []
 
@@ -64,6 +64,9 @@ class CrossDoc::Paginator
         last_before_node.children = []
         last_before_node.box = last_before_node.box.dup
       end
+
+      # Force the newly split node to be shorter than the page to avoid an infinite loop.
+      after_node.box.height = content_height if content_height <= after_node.box.height
 
       # adjust the before_parent height to match the reduced number of children
       unless before_parent == new_page
@@ -138,21 +141,23 @@ class CrossDoc::Paginator
       page_num += 1
       y = 0
       stack = []
+      previous_span_node = nil
       0.upto @num_levels do |level|
         current_parent = stack.length > 0 ? stack.last : full_page
 
         span_node = find_spanning_node(content_height, current_parent, content_height - y)
-        if span_node
+        if span_node && span_node != previous_span_node
           stack << span_node
           if level == @num_levels
-            pages << break_page(full_page, stack)
+            pages << break_page(full_page, stack, content_height)
             break
           else
             y += span_node.box.y
           end
+          previous_span_node = span_node
         else # no span node
           if stack.length > 0
-            pages << break_page(full_page, stack)
+            pages << break_page(full_page, stack, content_height)
           else
             pages << full_page
             full_page = nil
