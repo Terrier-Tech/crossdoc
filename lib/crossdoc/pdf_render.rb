@@ -176,13 +176,13 @@ module CrossDoc
         STDOUT.flush
         if node.box.height > 0 && node.box.width > 0
           begin
-            @pdf.svg image.io, at: [0.0, node.box.height], width: node.box.width, cache_images: true
+            @pdf.svg image.io, at: [0.0, node.box.height], width: node.box.width, height: node.box.height, cache_images: true
           rescue Exception => ex
             puts "Error rendering SVG: #{ex.message}"
           end
         end
       else
-        @pdf.image image.io, fit: [node.box.width, node.box.height]
+        @pdf.image(image.io, width: node.box.width, height: node.box.height)
       end
     end
 
