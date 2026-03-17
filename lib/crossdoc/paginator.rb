@@ -1,37 +1,43 @@
 # takes a document and spreads it into multiple pages
 class CrossDoc::Paginator
 
-  def initialize(num_levels: 3, max_pages: 10)
+  def initialize(num_levels: 3, max_pages: 10, overlap_threshold: 0.01)
     @num_levels = num_levels
     @max_pages = max_pages
+
+    @overlap_threshold = overlap_threshold # if children overlap by more than this much, they are considered overlapping
   end
 
-  # returns the node in parent.children that spans y
-  def find_spanning_node(content_height, parent, y)
+  # Given a spanning node, find the child node that spans the remaining height on the page.
+  # If no child spans the remaining height, no node is returned and the given parent is the minimum spanning node.
+  def find_spanning_node(parent, remaining_height)
+    return nil if parent.children.empty?
+
+    # if the parent's children are laid out horizontally (i.e., their height overlaps), we want the parent node and its
+    # children to break together. therefore, the parent doesn't have a spanning child if any of its children have
+    # vertical overlap.
+    return nil if parent.children.any? do |child_1|
+      next false if child_1.box.nil?
+      parent.children.any? do |child_2|
+        next nil if child_2.box.nil? || child_1 == child_2
+
+        # find the amount of overlap (in pixels) between the two children
+        box_1 = child_1.box
+        box_2 = child_2.box
+
+        min = [box_1.y, box_2.y].max
+        max = [box_1.bottom, box_2.bottom].min
+
+        # if the amount of overlap exeeds the threshold, the parent should be the minimum spanning node
+        (max - min) >= @overlap_threshold
+      end
+    end
+
     parent.children&.find do |node|
       next false unless node.box.present?
 
-      box = node.box
-
-      # Don't split child nodes that are taller than the entire document.
-      # Otherwise, this algorithm will generate blank pages until the limit.
-      next false if (box.bottom - box.y > content_height) && node.children&.empty?
-
-      # look for a node that is entirely below y
-      next true if box.y >= y
-
-      # Don't split if the node significantly overlaps another in terms of height.
-      # Assumes that all child nodes of a parent are fully contained in the
-      # parent's bounding box.
-      next false if parent.children.reject { _1 == node }.find do |other_node|
-        next false unless other_node.box.present?
-
-        other_box = other_node.box
-        (box.y ... box.bottom).overlap? (other_box.y ... other_box.bottom)
-      end
-
-      # look for a node that spans y
-      (box.y ... box.bottom).include? y
+      # If the bottom of this child extends below the remaining height, it spans the page break
+      node.box.bottom > remaining_height
     end
   end
 
@@ -43,6 +49,7 @@ class CrossDoc::Paginator
     new_page.floating_children = page.floating_children
     page.floating_children = []
 
+    # from bottom to top in the stack, move siblings after the spanning sibling to the next page
     before_parent = new_page
     after_parent = page
     stack.each do |after_node|
@@ -54,27 +61,27 @@ class CrossDoc::Paginator
         before_parent.children = after_parent.children[0..i-1]
       end
 
-      # truncate the children before the after_node
+      # remove nodes before the split from the after_parent
       after_parent.children = after_parent.children[i..-1]
 
-      # unless we're at the end of the stack, make a copy of the split node to use as before_parent
-      unless end_of_stack
+      if end_of_stack
+        # we're at the top of the stack, so the current node will be fully on the next page
+        last_before_node = before_parent.children.last
+
+        # if the current node is taller than the page, limit its height so it doesn't overflow the next page as well.
+        after_node.box.height = content_height if content_height <= after_node.box.height
+      else
+        # if we're not at the end of the stack, split this node between the previous and current page. on the next level
+        # of the stack, siblings before the spanning child will be moved _back_ to this copy.
         last_before_node = after_node.shallow_copy
-        before_parent.children << last_before_node
         last_before_node.children = []
         last_before_node.box = last_before_node.box.dup
+        before_parent.children << last_before_node
       end
-
-      # Force the newly split node to be shorter than the page to avoid an infinite loop.
-      after_node.box.height = content_height if content_height <= after_node.box.height
 
       # adjust the before_parent height to match the reduced number of children
       unless before_parent == new_page
-        if before_parent.children.last&.box
-          before_parent.box.height = before_parent.children.last.box.bottom
-        else
-          before_parent.box.height = 0
-        end
+        before_parent.box.height = last_before_node&.box&.bottom || 0
       end
 
       # ordered list was broken up, so change the start of after_parent
@@ -83,9 +90,11 @@ class CrossDoc::Paginator
       end
 
       after_parent = after_node
-      before_parent = before_parent.children.last
+      before_parent = last_before_node
     end # after_node
 
+    # from top to bottom in the stack, adjust the vertical position of nodes that are on the current page to account for
+    # the height of nodes moved to the previous page.
     full_stack = [page] + stack
     height_diff = 0
     1.upto(stack.size).each do |i|
@@ -141,12 +150,12 @@ class CrossDoc::Paginator
       page_num += 1
       y = 0
       stack = []
-      previous_span_node = nil
       0.upto @num_levels do |level|
         current_parent = stack.length > 0 ? stack.last : full_page
 
-        span_node = find_spanning_node(content_height, current_parent, content_height - y)
-        if span_node && span_node != previous_span_node
+        span_node = find_spanning_node(current_parent, content_height - y)
+
+        if span_node
           stack << span_node
           if level == @num_levels
             pages << break_page(full_page, stack, content_height)
@@ -154,7 +163,6 @@ class CrossDoc::Paginator
           else
             y += span_node.box.y
           end
-          previous_span_node = span_node
         else # no span node
           if stack.length > 0
             pages << break_page(full_page, stack, content_height)
