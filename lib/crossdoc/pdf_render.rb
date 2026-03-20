@@ -447,10 +447,10 @@ module CrossDoc
     # - Linebreak tags into <br>
     # - Italicizing tags into <em>
     # - Bolding tags into <strong>
-    def compute_compound_text(node)
-      return '' unless node.children.present?
-      node.children.map do |child|
-        text = child.text || compute_compound_text(child) || ''
+    def compute_compound_text(children)
+      return '' unless children.present?
+      children.map do |child|
+        text = child.text || compute_compound_text(child.children) || ''
         case child.tag
         when 'BR' then '<br>'
         when 'EM', 'I', 'Q' then "<i>#{text}</i>"
@@ -512,8 +512,9 @@ module CrossDoc
       ctx.pdf.bounding_box pos, width: node.box.width, height: height do
         ctx.render_node_background node
 
-        if node.children.present? && node.children.all? { _1.box.nil? } # All children are text
-          text = preprocess_editorjs_tags(compute_compound_text(node))
+        initial_text_children = node.children&.take_while { _1.box.nil? }
+        if initial_text_children.present?
+          text = preprocess_editorjs_tags(compute_compound_text(initial_text_children))
           compute_compound_font node
           ctx.render_node_text(text, node)
         elsif node.input_value.present?
