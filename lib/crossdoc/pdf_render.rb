@@ -182,7 +182,7 @@ module CrossDoc
           end
         end
       else
-        @pdf.image(image.io, width: node.box.width, height: node.box.height)
+        @pdf.image(image.io, fit: [node.box.width, node.box.height])
       end
     end
 
