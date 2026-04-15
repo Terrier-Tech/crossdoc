@@ -447,11 +447,12 @@ module CrossDoc
     # - Linebreak tags into <br>
     # - Italicizing tags into <em>
     # - Bolding tags into <strong>
-    def compute_compound_text(children)
+    def compute_compound_text(children, parent_font)
       return '' unless children.present?
       children.map do |child|
-        text = child.text || compute_compound_text(child.children) || ''
-        case child.tag
+        text = child.text || compute_compound_text(child.children, child.font || parent_font) || ''
+
+        text = case child.tag
         when 'BR' then '<br>'
         when 'EM', 'I', 'Q' then "<i>#{text}</i>"
         when 'STRONG', 'B' then "<b>#{text}</b>"
@@ -461,7 +462,39 @@ module CrossDoc
         when 'SUB' then "<sub>#{text}</sub>"
         else text
         end
-      end.join(' ')
+
+        text = preprocess_font_attributes(text, child.font, parent_font)
+
+        text
+      end
+        .join(' ')
+        .gsub(' ,', ',')
+    end
+
+    def preprocess_font_attributes(text, font, parent_font)
+      return text unless font
+
+      size = font.size
+      parent_size = parent_font.size
+      if size.present? && parent_size != size
+        text = "<font size='#{size}'>#{text}</font>"
+      end
+
+      color = font.color
+      parent_color = parent_font.color
+      if color.present? && parent_color != color
+        # Color is given as '#RRGGBBAA', need just 'RRGGBB'
+        color = color.delete_prefix '#'
+        color = color[0..5] if color.length > 6
+
+        text = "<color rgb='#{color}'>#{text}</color>"
+      end
+
+      text = "<u>#{text}</u>" if font.decoration.presence == 'underline'
+      text = "<i>#{text}</i>" if font.style.presence == 'italic'
+      text = "<b>#{text}</b>" if font.weight&.downcase&.include?('bold') || font&.weight&.to_i&.>(400)
+
+      text
     end
 
     # convert EditorJS-specific formatting tags to something compatible with Prawn.
@@ -514,8 +547,8 @@ module CrossDoc
 
         initial_text_children = node.children&.take_while { _1.box.nil? }
         if initial_text_children.present?
-          text = preprocess_editorjs_tags(compute_compound_text(initial_text_children))
           compute_compound_font node
+          text = preprocess_editorjs_tags(compute_compound_text(initial_text_children, node.font || CrossDoc::Font.default))
           ctx.render_node_text(text, node)
         elsif node.input_value.present?
           text = preprocess_editorjs_tags node.input_value
