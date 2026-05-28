@@ -154,7 +154,7 @@ module CrossDoc
     end
 
     def self.default(modifiers={})
-      args = { family: 'helvetica,sans-serif', color: '#000000', size: 12, weight: 'normal', align: :left, valign: :top, line_height: 16 }.merge modifiers
+      args = { family: 'Helvetica', color: '#000000', size: 12, weight: 'normal', align: :left, valign: :top, line_height: 16 }.merge modifiers
       # guess as a good line height
       unless args.has_key? :line_height
         args[:line_height] = (1.4 * args[:size]).round.to_i
