@@ -317,10 +317,10 @@ module CrossDoc
 
     def initialize(document)
       @doc = document
-      @show_overlays = false
+      @show_overlays = true
       @horizontal_guides = []
       @box_guides = []
-      @font_families = {}
+      @font_families = document.font_registry
     end
 
     attr_reader :doc

@@ -30,8 +30,9 @@ module CrossDoc
 
     attr_accessor :block_orientation, :weight, :min_height, :margin
 
-    def initialize(doc_builder, raw)
+    def initialize(doc_builder, raw, font_registry)
       @doc_builder = doc_builder
+      @font_registry = font_registry
 
       @block_orientation = raw.delete(:block_orientation)&.to_sym || :vertical
 
@@ -108,7 +109,7 @@ module CrossDoc
 
     def node(tag, raw={})
       raw[:tag] = tag.upcase
-      node_builder = NodeBuilder.new @doc_builder, raw
+      node_builder = NodeBuilder.new(@doc_builder, raw, @font_registry)
       yield node_builder if block_given?
       @child_builders << node_builder
     end
@@ -116,7 +117,7 @@ module CrossDoc
     def horizontal_div(raw={})
       raw[:tag] = 'DIV'
       raw[:block_orientation] = 'horizontal'
-      node_builder = NodeBuilder.new @doc_builder, raw
+      node_builder = NodeBuilder.new(@doc_builder, raw, @font_registry)
       yield node_builder if block_given?
       @child_builders << node_builder
     end
@@ -124,7 +125,7 @@ module CrossDoc
     def div(raw={})
       raw[:tag] = 'DIV'
       raw[:block_orientation] = 'vertical'
-      node_builder = NodeBuilder.new @doc_builder, raw
+      node_builder = NodeBuilder.new(@doc_builder, raw, @font_registry)
       yield node_builder if block_given?
       @child_builders << node_builder
     end
@@ -133,7 +134,7 @@ module CrossDoc
     def floating_div(box, raw={})
       raw[:tag] = 'DIV'
       raw[:box] = box
-      node_builder = NodeBuilder.new @doc_builder, raw
+      node_builder = NodeBuilder.new(@doc_builder, raw, @font_registry)
       yield node_builder if block_given?
       @floating_child_builders << node_builder
     end
@@ -176,7 +177,12 @@ module CrossDoc
       if self.text && self.font
         # stupid simple font metrics
         # num_lines = (self.text.length * self.font.size * 0.48 / child_width).ceil
-        num_lines = FontMetrics.num_lines self.text, child_width, self.font.size
+        num_lines = FontMetrics.num_lines(
+          self.text,
+          child_width,
+          self.font.size,
+          self.font.family,
+          @font_registry)
         push_min_height (self.font.line_height || self.font.size) * num_lines
       end
       self.box.height = @min_height + self.padding.top + self.padding.bottom
@@ -238,7 +244,7 @@ module CrossDoc
   class PageBuilder < NodeBuilder
     include CrossDoc::RawShadow
 
-    def initialize(doc_builder, raw)
+    def initialize(doc_builder, raw, font_registry)
       super
       @padding = Margin.new
       @box = doc_builder.page_box
@@ -268,10 +274,12 @@ module CrossDoc
 
     def initialize(options={})
       @options = {
-          page_size: 'us-letter',
-          page_orientation: 'portrait',
-          page_margin: '0.75in'
+        page_size: 'us-letter',
+        page_orientation: 'portrait',
+        page_margin: '0.75in',
+        font_registry: {}
       }.merge options
+      @font_registry = @options[:font_registry]
       dimensions = Document.get_dimensions @options[:page_size], @options[:page_orientation]
       @page_width = dimensions[:width]
       @page_height = dimensions[:height]
@@ -296,14 +304,14 @@ module CrossDoc
     end
 
     def page(raw={})
-      page_builder = PageBuilder.new self, raw
+      page_builder = PageBuilder.new(self, raw, @font_registry)
       yield page_builder
       @page_builders << page_builder
     end
 
     def header(raw={})
       raw[:block_orientation] = :horizontal
-      @header_builder = NodeBuilder.new self, raw
+      @header_builder = NodeBuilder.new(self, raw, @font_registry)
       yield @header_builder
       @header_builder.box.width = @page_width - @page_margin.left - @page_margin.right
       @header_builder.flow_header_footer
@@ -311,7 +319,7 @@ module CrossDoc
 
     def footer(raw={})
       raw[:block_orientation] = :horizontal
-      @footer_builder = NodeBuilder.new self, raw
+      @footer_builder = NodeBuilder.new(self, raw, @font_registry)
       yield @footer_builder
       @footer_builder.box.width = @page_width - @page_margin.left - @page_margin.right
       @footer_builder.flow_header_footer
@@ -344,7 +352,7 @@ module CrossDoc
       if @footer_builder
         attrs[:footer] = @footer_builder.to_node
       end
-      CrossDoc::Document.new attrs
+      CrossDoc::Document.new(attrs, font_registry: @font_registry)
     end
 
   end

@@ -14,7 +14,11 @@ module CrossDoc
     # @param font_size [Numeric] The font size in pixels (not points!)
     # @param font_name [String] The font family whose metrics to use
     # @returns [Integer] the number of lines taken by the wrapped text
-    def self.num_lines(text, width, font_size, font_name='Helvetica')
+    def self.num_lines(text, width, font_size, font_name = 'Helvetica', font_registry = {})
+      font_registry.each do |name, entry|
+        @dummy_document.font_families.update(name => entry)
+      end
+
       font = @dummy_document.find_font font_name
 
       words = text.split(/\s+/)

@@ -185,7 +185,9 @@ module CrossDoc
 
     hash_field :images, ImageRef
 
-    def initialize(attrs)
+    attr_reader :font_registry
+
+    def initialize(attrs, font_registry: {})
       if attrs.instance_of? String
         attrs = JSON.parse attrs
       end
@@ -193,6 +195,7 @@ module CrossDoc
       unless @page_margin
         @page_margin = Margin.new
       end
+      @font_registry = font_registry
     end
 
     def self.from_file(path)
