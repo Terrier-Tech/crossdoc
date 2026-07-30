@@ -228,7 +228,10 @@
         // run the tag-specific parser, if one exists
         if (tagParsers.hasOwnProperty(obj.tag)) {
             tagParsers[obj.tag](doc, node, obj, style)
-        } else if (node.constructor && customElements.getName(node.constructor)) {
+        } else if (node.constructor &&
+            customElements &&
+            'getName' in customElements &&
+            customElements.getName(node.constructor)) {
             // this is a custom tag, treat it as a div
             obj.tag = 'DIV'
         }
